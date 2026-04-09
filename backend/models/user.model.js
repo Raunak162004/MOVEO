@@ -1,13 +1,14 @@
 const mongoose = require("mongoose");
+const bcrypt = require('bcrypt');
 
 const userSchema = new mongoose.Schema({
-  fullName: {
-    firstName: {
+  fullname: {
+    firstname: {
       type: String,
       minLength: [3, "First name must be at least 3 characters long"],
       required: true,
     },
-    lastName: {
+    lastname: {
       type: String,
       minLength: [3, "Last name must be at least 3 characters long"],
     }
@@ -28,6 +29,13 @@ const userSchema = new mongoose.Schema({
   },
 });
 
+
+userSchema.pre('save', async function(){
+  if (this.isModified('password')) {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+  }
+});  
 
 const User = mongoose.model("User", userSchema);
 
