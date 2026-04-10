@@ -1,19 +1,63 @@
-# Backend API Documentation
+# Moveo Backend API Guide
 
-This document describes the backend APIs currently implemented in the `backend` folder.
+This README documents the backend APIs currently available in the `backend` folder in a frontend-friendly format.
 
-## Project Info
+## Quick Info
 
-- Default port: `4000` from `.env`
-- Local server URL: `http://localhost:4000`
+- Server URL: `http://localhost:4000`
 - Base API URL: `http://localhost:4000/api/v1`
+- User base path: `/api/v1/users`
+- Captain base path: `/api/v1/captains`
 
-## Available Endpoints
+## API Index
 
-### 1. Health Check
+| Area | Method | Endpoint | Purpose |
+| --- | --- | --- | --- |
+| Root | `GET` | `/` | Basic health route |
+| User | `POST` | `/api/v1/users/register` | Register a new user |
+| User | `POST` | `/api/v1/users/login` | Login user |
+| User | `GET` | `/api/v1/users/profile` | Get logged-in user profile |
+| User | `GET` | `/api/v1/users/logout` | Logout user |
+| Captain | `POST` | `/api/v1/captains/register` | Register a new captain |
 
-- Method: `GET`
-- Endpoint: `/`
+## Common Response Types
+
+### Validation error
+
+```json
+{
+  "errors": [
+    {
+      "type": "field",
+      "msg": "Validation message",
+      "path": "fieldName",
+      "location": "body"
+    }
+  ]
+}
+```
+
+### General error
+
+```json
+{
+  "error": "error message"
+}
+```
+
+### Unauthorized error
+
+```json
+{
+  "message": "Unauthorized"
+}
+```
+
+## Root Endpoint
+
+### `GET /`
+
+Use this route to quickly verify the server is running.
 
 #### Response
 
@@ -23,20 +67,11 @@ This document describes the backend APIs currently implemented in the `backend` 
 
 ## User APIs
 
-Base path for user routes:
+### `POST /api/v1/users/register`
 
-```text
-/api/v1/users
-```
+Creates a new user account.
 
-### 1. Register User
-
-- Method: `POST`
-- Endpoint: `/api/v1/users/register`
-
-#### Expected Data From Frontend
-
-Frontend should send JSON in this format:
+#### Frontend should send
 
 ```json
 {
@@ -49,43 +84,16 @@ Frontend should send JSON in this format:
 }
 ```
 
-#### Field Details
+#### Required fields
 
-- `fullname.firstname`
-  - Type: `string`
-  - Required: `yes`
-  - Minimum length: `3`
-- `fullname.lastname`
-  - Type: `string`
-  - Required: `no` in route validation, but expected by model structure
-  - Minimum length: `3` if provided
-- `email`
-  - Type: `string`
-  - Required: `yes`
-  - Must be a valid email
-  - Minimum length: `5`
-- `password`
-  - Type: `string`
-  - Required: `yes`
-  - Minimum length: `5`
+- `fullname.firstname`: string, minimum 3 characters
+- `fullname.lastname`: string, optional in route validation, minimum 3 if provided
+- `email`: valid email string, minimum 5 characters
+- `password`: string, minimum 5 characters
 
-#### Validation Rules
+#### Success response
 
-The backend currently validates:
-
-- `email` must be a valid email and at least 5 characters long
-- `password` must be at least 5 characters long
-- `fullname.firstname` must be at least 3 characters long
-
-#### Success Response
-
-Status code:
-
-```text
-201 Created
-```
-
-Example response shape:
+Status: `201 Created`
 
 ```json
 {
@@ -100,59 +108,16 @@ Example response shape:
 }
 ```
 
-#### Notes About Success Response
+#### Notes
 
-- Password is not returned in the response
-- Password is hashed before saving to MongoDB
-- Response contains the created user document
+- Password is hashed before saving
+- Password is not returned in the register response
 
-#### Validation Error Response
+### `POST /api/v1/users/login`
 
-Status code:
+Logs in a user and returns a JWT token.
 
-```text
-400 Bad Request
-```
-
-Example response:
-
-```json
-{
-  "errors": [
-    {
-      "type": "field",
-      "msg": "Password must be at least 5 characters long",
-      "path": "password",
-      "location": "body"
-    }
-  ]
-}
-```
-
-#### Service or Model Error Response
-
-Status code:
-
-```text
-400 Bad Request
-```
-
-Example response:
-
-```json
-{
-  "error": "All fields are required"
-}
-```
-
-### 2. Login User
-
-- Method: `POST`
-- Endpoint: `/api/v1/users/login`
-
-#### Expected Data From Frontend
-
-Frontend should send JSON in this format:
+#### Frontend should send
 
 ```json
 {
@@ -161,34 +126,14 @@ Frontend should send JSON in this format:
 }
 ```
 
-#### Field Details
+#### Required fields
 
-- `email`
-  - Type: `string`
-  - Required: `yes`
-  - Must be a valid email
-  - Minimum length: `5`
-- `password`
-  - Type: `string`
-  - Required: `yes`
-  - Minimum length: `5`
+- `email`: valid email string, minimum 5 characters
+- `password`: string, minimum 5 characters
 
-#### Validation Rules
+#### Success response
 
-The backend currently validates:
-
-- `email` must be a valid email and at least 5 characters long
-- `password` must be at least 5 characters long
-
-#### Success Response
-
-Status code:
-
-```text
-200 OK
-```
-
-Example response shape:
+Status: `200 OK`
 
 ```json
 {
@@ -207,83 +152,32 @@ Example response shape:
 }
 ```
 
-#### Notes About Success Response
+#### Notes
 
-- Backend returns a JWT token
-- Token is created using `JWT_SECRET`
-- Token expiry is currently `1d`
-- Backend also sets the token in a cookie named `token`
-- The current login response also returns the user object
-- The current login response includes the hashed password because the controller fetches the user with `select("+password")` and returns it directly
+- JWT is created using `JWT_SECRET`
+- Token expiry is currently `24h`
+- Backend also sets a cookie named `token`
+- Current implementation returns the user object along with the token
+- Current implementation also returns the hashed password in the login response
 
-#### Validation Error Response
+### `GET /api/v1/users/profile`
 
-Status code:
+Returns the currently authenticated user.
 
-```text
-400 Bad Request
-```
+#### Authentication
 
-Example response:
-
-```json
-{
-  "errors": [
-    {
-      "type": "field",
-      "msg": "Email must be at least 5 characters long",
-      "path": "email",
-      "location": "body"
-    }
-  ]
-}
-```
-
-#### Invalid Credentials Response
-
-Status code:
-
-```text
-401 Unauthorized
-```
-
-Example response:
-
-```json
-{
-  "error": "Invalid email or password"
-}
-```
-
-### 3. Get User Profile
-
-- Method: `GET`
-- Endpoint: `/api/v1/users/profile`
-
-#### Authentication Required
-
-This endpoint is protected.
-
-Backend accepts token from either:
+Send token using either:
 
 - Cookie: `token`
 - Header: `Authorization: Bearer <token>`
 
-#### Expected Data From Frontend
+#### Frontend should send
 
-No request body is required.
+No request body.
 
-Frontend must send a valid authentication token.
+#### Success response
 
-#### Success Response
-
-Status code:
-
-```text
-200 OK
-```
-
-Example response shape:
+Status: `200 OK`
 
 ```json
 {
@@ -298,57 +192,30 @@ Example response shape:
 }
 ```
 
-#### Unauthorized Response
+### `GET /api/v1/users/logout`
 
-Status code:
+Logs out the current user.
 
-```text
-401 Unauthorized
-```
+#### Authentication
 
-Example response:
-
-```json
-{
-  "message": "Unauthorized"
-}
-```
-
-### 4. Logout User
-
-- Method: `GET`
-- Endpoint: `/api/v1/users/logout`
-
-#### Authentication Required
-
-This endpoint is protected.
-
-Backend accepts token from either:
+Send token using either:
 
 - Cookie: `token`
 - Header: `Authorization: Bearer <token>`
 
-#### Expected Data From Frontend
+#### Frontend should send
 
-No request body is required.
+No request body.
 
-Frontend must send a valid authentication token.
-
-#### What Backend Does
+#### What backend does
 
 - Clears the `token` cookie
-- Stores the token in blacklist collection
+- Saves the token to the blacklist collection
 - Blacklisted token expires automatically after 24 hours
 
-#### Success Response
+#### Success response
 
-Status code:
-
-```text
-200 OK
-```
-
-Example response:
+Status: `200 OK`
 
 ```json
 {
@@ -356,150 +223,128 @@ Example response:
 }
 ```
 
-#### Unauthorized Response
+## Captain APIs
 
-Status code:
+### `POST /api/v1/captains/register`
 
-```text
-401 Unauthorized
-```
+Creates a new captain account with vehicle details.
 
-Example response:
-
-```json
-{
-  "message": "Unauthorized"
-}
-```
-
-## Summary For Frontend
-
-### Frontend should send for register
+#### Frontend should send
 
 ```json
 {
   "fullname": {
-    "firstname": "string",
-    "lastname": "string"
+    "firstname": "Aman",
+    "lastname": "Kumar"
   },
-  "email": "string",
-  "password": "string"
-}
-```
-
-### Backend sends on register success
-
-```json
-{
-  "_id": "string",
-  "fullname": {
-    "firstname": "string",
-    "lastname": "string"
-  },
-  "email": "string",
-  "socketId": "string or null",
-  "__v": 0
-}
-```
-
-### Frontend should send for login
-
-```json
-{
-  "email": "string",
-  "password": "string"
-}
-```
-
-### Backend sends on login success
-
-```json
-{
-  "token": "string",
-  "user": {
-    "_id": "string",
-    "fullname": {
-      "firstname": "string",
-      "lastname": "string"
-    },
-    "email": "string",
-    "password": "hashed string",
-    "socketId": "string or null",
-    "__v": 0
+  "email": "aman@example.com",
+  "password": "12345",
+  "vehicle": {
+    "color": "Black",
+    "plate": "DL01AB1234",
+    "capacity": 4,
+    "vehicleType": "car"
   }
 }
 ```
 
-### Frontend should send for profile
+#### Required fields
 
-No body is required.
+- `fullname.firstname`: string, minimum 3 characters
+- `fullname.lastname`: string, optional in route validation
+- `email`: valid email string, minimum 5 characters
+- `password`: string, minimum 5 characters
+- `vehicle.color`: string, minimum 3 characters
+- `vehicle.plate`: string, minimum 3 characters
+- `vehicle.capacity`: integer, minimum 1
+- `vehicle.vehicleType`: must be one of `car`, `motorcycle`, `auto`
 
-Send either:
+#### Success response
 
-- cookie `token`
-- `Authorization: Bearer <token>` header
-
-### Backend sends on profile success
+Status: `201 Created`
 
 ```json
 {
-  "_id": "string",
+  "_id": "captain_id",
+  "fullname": {
+    "firstname": "Aman",
+    "lastname": "Kumar"
+  },
+  "email": "aman@example.com",
+  "socketId": null,
+  "status": "inactive",
+  "vehicle": {
+    "color": "Black",
+    "plate": "DL01AB1234",
+    "capacity": 4,
+    "vehicleType": "car"
+  },
+  "location": {},
+  "__v": 0
+}
+```
+
+#### Notes
+
+- Password is hashed before saving
+- Password is not expected in the captain register response because the model marks it with `select: false`
+- If a captain with the same email already exists, backend returns:
+
+```json
+{
+  "error": "Captain with this email already exists"
+}
+```
+
+## Frontend Cheat Sheet
+
+### User register body
+
+```json
+{
   "fullname": {
     "firstname": "string",
     "lastname": "string"
   },
   "email": "string",
-  "socketId": "string or null",
-  "__v": 0
+  "password": "string"
 }
 ```
 
-### Frontend should send for logout
-
-No body is required.
-
-Send either:
-
-- cookie `token`
-- `Authorization: Bearer <token>` header
-
-### Backend sends on logout success
+### User login body
 
 ```json
 {
-  "message": "Logged out successfully"
+  "email": "string",
+  "password": "string"
 }
 ```
 
-### Backend sends on error
-
-Validation error:
+### Captain register body
 
 ```json
 {
-  "errors": []
+  "fullname": {
+    "firstname": "string",
+    "lastname": "string"
+  },
+  "email": "string",
+  "password": "string",
+  "vehicle": {
+    "color": "string",
+    "plate": "string",
+    "capacity": 1,
+    "vehicleType": "car | motorcycle | auto"
+  }
 }
 ```
 
-General error:
+### Protected routes auth
 
-```json
-{
-  "error": "error message"
-}
-```
-
-Unauthorized error:
-
-```json
-{
-  "message": "Unauthorized"
-}
-```
+- Use cookie `token`, or
+- Use header `Authorization: Bearer <token>`
 
 ## Run Backend
-
-Install dependencies and start the server:
 
 ```bash
 npm install
