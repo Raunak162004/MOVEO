@@ -3,6 +3,7 @@ const userService = require("../services/user.service");
 const User = require("../models/user.model");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const BlackList = require("../models/blacklistToken.model");
 
 module.exports.registerUser = async (req, res) => {
     const errors = validationResult(req);
@@ -43,7 +44,7 @@ module.exports.loginUser = async (req,res) => {
         return res.status(401).json({error: "Invalid email or password"});
     }
 
-    const token = jwt.sign({userId: user._id}, process.env.JWT_SECRET, {expiresIn: "1d"});
+    const token = jwt.sign({userId: user._id}, process.env.JWT_SECRET, {expiresIn: "24h"});
 
     res.cookie("token", token)
 
@@ -52,4 +53,14 @@ module.exports.loginUser = async (req,res) => {
 
 module.exports.getUserProfile = async (req, res) => {
     res.status(200).json(req.user);
+}
+
+module.exports.logoutUser = async (req,res) => {
+    res.clearCookie("token");
+
+    const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+
+    await BlackList.create({token});
+
+    res.status(200).json({message: "Logged out successfully"});
 }
