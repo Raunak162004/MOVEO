@@ -45,5 +45,11 @@ module.exports.loginUser = async (req,res) => {
 
     const token = jwt.sign({userId: user._id}, process.env.JWT_SECRET, {expiresIn: "1d"});
 
+    res.cookie("token", token)
+
     res.status(200).json({token, user});
+}
+
+module.exports.getUserProfile = async (req, res) => {
+    res.status(200).json(req.user);
 }
