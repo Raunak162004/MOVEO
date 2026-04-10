@@ -212,6 +212,7 @@ Example response shape:
 - Backend returns a JWT token
 - Token is created using `JWT_SECRET`
 - Token expiry is currently `1d`
+- Backend also sets the token in a cookie named `token`
 - The current login response also returns the user object
 - The current login response includes the hashed password because the controller fetches the user with `select("+password")` and returns it directly
 
@@ -251,6 +252,123 @@ Example response:
 ```json
 {
   "error": "Invalid email or password"
+}
+```
+
+### 3. Get User Profile
+
+- Method: `GET`
+- Endpoint: `/api/v1/users/profile`
+
+#### Authentication Required
+
+This endpoint is protected.
+
+Backend accepts token from either:
+
+- Cookie: `token`
+- Header: `Authorization: Bearer <token>`
+
+#### Expected Data From Frontend
+
+No request body is required.
+
+Frontend must send a valid authentication token.
+
+#### Success Response
+
+Status code:
+
+```text
+200 OK
+```
+
+Example response shape:
+
+```json
+{
+  "_id": "user_id",
+  "fullname": {
+    "firstname": "Rahul",
+    "lastname": "Sharma"
+  },
+  "email": "rahul@example.com",
+  "socketId": null,
+  "__v": 0
+}
+```
+
+#### Unauthorized Response
+
+Status code:
+
+```text
+401 Unauthorized
+```
+
+Example response:
+
+```json
+{
+  "message": "Unauthorized"
+}
+```
+
+### 4. Logout User
+
+- Method: `GET`
+- Endpoint: `/api/v1/users/logout`
+
+#### Authentication Required
+
+This endpoint is protected.
+
+Backend accepts token from either:
+
+- Cookie: `token`
+- Header: `Authorization: Bearer <token>`
+
+#### Expected Data From Frontend
+
+No request body is required.
+
+Frontend must send a valid authentication token.
+
+#### What Backend Does
+
+- Clears the `token` cookie
+- Stores the token in blacklist collection
+- Blacklisted token expires automatically after 24 hours
+
+#### Success Response
+
+Status code:
+
+```text
+200 OK
+```
+
+Example response:
+
+```json
+{
+  "message": "Logged out successfully"
+}
+```
+
+#### Unauthorized Response
+
+Status code:
+
+```text
+401 Unauthorized
+```
+
+Example response:
+
+```json
+{
+  "message": "Unauthorized"
 }
 ```
 
@@ -312,6 +430,47 @@ Example response:
 }
 ```
 
+### Frontend should send for profile
+
+No body is required.
+
+Send either:
+
+- cookie `token`
+- `Authorization: Bearer <token>` header
+
+### Backend sends on profile success
+
+```json
+{
+  "_id": "string",
+  "fullname": {
+    "firstname": "string",
+    "lastname": "string"
+  },
+  "email": "string",
+  "socketId": "string or null",
+  "__v": 0
+}
+```
+
+### Frontend should send for logout
+
+No body is required.
+
+Send either:
+
+- cookie `token`
+- `Authorization: Bearer <token>` header
+
+### Backend sends on logout success
+
+```json
+{
+  "message": "Logged out successfully"
+}
+```
+
 ### Backend sends on error
 
 Validation error:
@@ -327,6 +486,14 @@ General error:
 ```json
 {
   "error": "error message"
+}
+```
+
+Unauthorized error:
+
+```json
+{
+  "message": "Unauthorized"
 }
 ```
 
