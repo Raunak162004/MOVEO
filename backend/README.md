@@ -145,9 +145,118 @@ Example response:
 }
 ```
 
+### 2. Login User
+
+- Method: `POST`
+- Endpoint: `/api/v1/users/login`
+
+#### Expected Data From Frontend
+
+Frontend should send JSON in this format:
+
+```json
+{
+  "email": "rahul@example.com",
+  "password": "12345"
+}
+```
+
+#### Field Details
+
+- `email`
+  - Type: `string`
+  - Required: `yes`
+  - Must be a valid email
+  - Minimum length: `5`
+- `password`
+  - Type: `string`
+  - Required: `yes`
+  - Minimum length: `5`
+
+#### Validation Rules
+
+The backend currently validates:
+
+- `email` must be a valid email and at least 5 characters long
+- `password` must be at least 5 characters long
+
+#### Success Response
+
+Status code:
+
+```text
+200 OK
+```
+
+Example response shape:
+
+```json
+{
+  "token": "jwt_token",
+  "user": {
+    "_id": "user_id",
+    "fullname": {
+      "firstname": "Rahul",
+      "lastname": "Sharma"
+    },
+    "email": "rahul@example.com",
+    "password": "hashed_password",
+    "socketId": null,
+    "__v": 0
+  }
+}
+```
+
+#### Notes About Success Response
+
+- Backend returns a JWT token
+- Token is created using `JWT_SECRET`
+- Token expiry is currently `1d`
+- The current login response also returns the user object
+- The current login response includes the hashed password because the controller fetches the user with `select("+password")` and returns it directly
+
+#### Validation Error Response
+
+Status code:
+
+```text
+400 Bad Request
+```
+
+Example response:
+
+```json
+{
+  "errors": [
+    {
+      "type": "field",
+      "msg": "Email must be at least 5 characters long",
+      "path": "email",
+      "location": "body"
+    }
+  ]
+}
+```
+
+#### Invalid Credentials Response
+
+Status code:
+
+```text
+401 Unauthorized
+```
+
+Example response:
+
+```json
+{
+  "error": "Invalid email or password"
+}
+```
+
 ## Summary For Frontend
 
-### Frontend should send
+### Frontend should send for register
 
 ```json
 {
@@ -160,7 +269,7 @@ Example response:
 }
 ```
 
-### Backend sends on success
+### Backend sends on register success
 
 ```json
 {
@@ -172,6 +281,34 @@ Example response:
   "email": "string",
   "socketId": "string or null",
   "__v": 0
+}
+```
+
+### Frontend should send for login
+
+```json
+{
+  "email": "string",
+  "password": "string"
+}
+```
+
+### Backend sends on login success
+
+```json
+{
+  "token": "string",
+  "user": {
+    "_id": "string",
+    "fullname": {
+      "firstname": "string",
+      "lastname": "string"
+    },
+    "email": "string",
+    "password": "hashed string",
+    "socketId": "string or null",
+    "__v": 0
+  }
 }
 ```
 
