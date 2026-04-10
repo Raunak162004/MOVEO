@@ -1,5 +1,8 @@
 const { validationResult } = require("express-validator");
 const userService = require("../services/user.service");
+const User = require("../models/user.model");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 module.exports.registerUser = async (req, res) => {
     const errors = validationResult(req);
@@ -18,4 +21,29 @@ module.exports.registerUser = async (req, res) => {
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
+}
+
+module.exports.loginUser = async (req,res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    const {email, password} = req.body;
+
+    const user = await User.findOne({email}).select("+password");
+
+    if(!user) {
+        return res.status(401).json({error: "Invalid email or password"});
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if(!isMatch) {
+        return res.status(401).json({error: "Invalid email or password"});
+    }
+
+    const token = jwt.sign({userId: user._id}, process.env.JWT_SECRET, {expiresIn: "1d"});
+
+    res.status(200).json({token, user});
 }
