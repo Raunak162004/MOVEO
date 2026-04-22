@@ -1,15 +1,16 @@
-import React, { useState } from 'react'
+import React, { useState,useContext } from 'react'
 import { Link } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
-// import { CaptainDataContext } from '../context/CapatainContext'
+import Moveo from '../assets/Moveo.png'
+import { CaptainDataContext } from '../context/CaptainContext'
 
 const Captainlogin = () => {
 
   const [ email, setEmail ] = useState('')
   const [ password, setPassword ] = useState('')
 
-  // const { captain, setCaptain } = React.useContext(CaptainDataContext)
+  const { captain, setCaptain } = useContext(CaptainDataContext)
   const navigate = useNavigate()
 
 
@@ -38,7 +39,7 @@ const Captainlogin = () => {
   return (
     <div className='p-7 h-screen flex flex-col justify-between'>
       <div>
-        <img className='w-20 mb-3' src="https://www.svgrepo.com/show/505031/uber-driver.svg" alt="" />
+        <img className='w-20 mb-3' src={Moveo} alt="Moveo Logo" />
 
         <form onSubmit={(e) => {
           submitHandler(e)
